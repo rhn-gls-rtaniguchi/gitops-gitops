@@ -26,7 +26,7 @@ pipeline{
       }
       success {
         sh 'rm drift-report.txt'
-        sh 'echo '\There is no configuration drift\' > no-drift.txt '
+        sh 'echo \'There is no configuration drift\' > no-drift.txt '
         archiveArtifacts artifacts: '*.txt'
       }
     }
