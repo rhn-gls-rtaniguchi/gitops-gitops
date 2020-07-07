@@ -19,6 +19,7 @@ pipeline{
         sh '! test -s drift-report.txt'
       }
     }
+  }
     post {
       failure {
         archiveArtifacts artifacts: '*.txt'
@@ -30,5 +31,4 @@ pipeline{
         archiveArtifacts artifacts: '*.txt'
       }
     }
-  }
 }
