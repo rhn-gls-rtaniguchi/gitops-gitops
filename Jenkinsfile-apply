@@ -1,0 +1,48 @@
+pipeline{
+
+  agent{
+    node{
+    label 'nodejs'
+    }
+  }
+  triggers{
+    pollSCM ('H/3 * * * *')
+
+  }
+  options{
+     buildDiscarder (logRotator (numToKeepStr: '5', artifactNumToKeepStr: '5'))
+     disableCOncurrentBuilds()
+
+  }
+  stages{
+    stage('Validate configuration resources'){
+      steps {
+        sh 'oc apply --dry-run -k config'
+      }
+    }
+
+    stage ('Apply resources'){
+      when{
+        branch 'master'
+      }
+      steps{
+        sh 'oc apply -k config'
+        sh 'oc wait co/authentication --for condition=Progressing --timeout 15s || true'
+        sh 'oc rollout status deployment/oauth-openshift -n openshift-authentication -w --timeout 360s'
+        sh 'while [ -n "$(oc get pod -n openshift-authentication -o \ 
+            jsonpath=\'{.items[?(@.metadata.deletionTimestamp != "")].metadata.name}\')" ] ; \ 
+            do sleep 3 ; done' 
+      }
+    }
+    stage ('Verify test user'){
+       when{
+         branch 'master'
+       }
+       steps {
+         sh 'oc login -u testuser -p redhat123 --insecure-skip-tls-verify https://kubernetes.default.svc:443'
+         sh 'oc new-project test-testuser || true'
+       }
+    }
+ 
+  }
+}
